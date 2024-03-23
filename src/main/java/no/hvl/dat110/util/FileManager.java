@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
+import no.hvl.dat110.middleware.Node;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -84,26 +85,49 @@ public class FileManager {
 
         int counter = 0;
 
-        // Task1: Given a filename, make replicas and distribute them to all active peers such that: pred < replica <= peer
-
-        // Task2: assign a replica as the primary for this file. Hint, see the slide (project 3) on Canvas
-
         // create replicas of the filename
+        createReplicaFiles();
 
         // iterate over the replicas
+        for (int i = 0; i < numReplicas; i++) {
+            // for each replica, find its successor (peer/node) by performing findSuccessor(replica)
+            NodeInterface successor = chordnode.findSuccessor(replicafiles[i]); // Get the successor for the current replica
 
-        // for each replica, find its successor (peer/node) by performing findSuccessor(replica)
+            // implement Task1: assign replicas to all active peers such that: pred < replica <= peer
+            NodeInterface pred = chordnode;
 
-        // call the addKey on the successor and add the replica
+            //iterate until we find the predecessor
+            while (!isBetweenRightInclusive(replicafiles[i], pred.getNodeID(), successor.getNodeID())) {
+                pred = pred.getSuccessor();
+                successor = pred.getSuccessor();
+            }
 
-        // implement a logic to decide if this successor should be assigned as the primary for the file
+            // implement Task1: assign replicas to all active peers such that: pred < replica <= peer
+            if (pred.getNodeID().compareTo(chordnode.getNodeID()) < 0 && successor.getNodeID().compareTo(replicafiles[i]) >= 0) {
+                // If pred < replica <= successor, assign the replica to successor
+                successor = pred; // Use predecessor as the successor
+            }
 
-        // call the saveFileContent() on the successor and set isPrimary=true if logic above is true otherwise set isPrimary=false
+            // implement Task2: assign a replica as the primary for this file
+            boolean isPrimary = (i == index); // Assigning primary based on random index
 
-        // increment counter
+            // call the saveFileContent() on the successor and set isPrimary=true if logic above is true otherwise set isPrimary=false
+            successor.saveFileContent(filename, replicafiles[i], bytesOfFile, isPrimary); // Save the file content on the successor
+
+            // increment counter
+            counter++;
+        }
+
         return counter;
     }
-
+    //Måtte lage en ny metode for å kunne finne predecessor
+    private boolean isBetweenRightInclusive(BigInteger key, BigInteger left, BigInteger right) {
+        if (left.compareTo(right) <= 0) {
+            return key.compareTo(left) > 0 && key.compareTo(right) <= 0;
+        } else {
+            return key.compareTo(left) > 0 || key.compareTo(right) <= 0;
+        }
+    }
     /**
      * @param filename
      * @return list of active nodes having the replicas of this file

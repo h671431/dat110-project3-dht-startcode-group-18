@@ -44,7 +44,7 @@ public class ChordLookup {
 			NodeInterface highestPredecessor = findHighestPredecessor(key);
 
 			// Gjør en rekursiv samtale til highest_pred.findSuccessor(key) - Dette er en rekursiv samtale til logikken returnerer true
-			return highestPredecessor.findSuccessor(key);
+			return highestPredecessor.getSuccessor();
 		}
 	}
 	
