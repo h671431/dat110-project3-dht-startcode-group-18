@@ -159,13 +159,19 @@ public class ChordProtocols {
 
 			// Hent finger-tabellen fra chordnode (array av NodeInterface)
 			List<NodeInterface> fingerTable = chordnode.getFingerTable();
-			// Pass på å tømme den nåværende finger-tabellen
-			fingerTable.clear();
+
 			// Hent adressens størrelse fra Hash-klassen. Dette er modulus og vårt adresserom (2^mbit = modulus)
 			int mbit = Hash.bitSize();
 			BigInteger modulus = BigInteger.valueOf(2).pow(mbit);
+
 			// get the number of bits from the Hash class. Number of bits = size of the finger table
 			int numBits = Hash.bitSize();
+
+			// Initialize finger table with the correct size
+			for (int i = 0; i < numBits; i++) {
+				fingerTable.add(null); // Add null entries to the finger table
+			}
+
 			// iterate over the number of bits
 			for (int i = 0; i < numBits; i++) {
 				// compute: k = succ(n + 2^(i)) mod 2^mbit

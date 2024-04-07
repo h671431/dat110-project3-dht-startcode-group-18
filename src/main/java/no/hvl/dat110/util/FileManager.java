@@ -81,9 +81,13 @@ public class FileManager {
 
         // randomly appoint the primary server to this file replicas
         Random rnd = new Random();
-        int index = rnd.nextInt(Util.numReplicas - 1);
+        int index = rnd.nextInt(Util.numReplicas-1);
 
         int counter = 0;
+
+        // Task1: Given a filename, make replicas and distribute them to all active peers such that: pred < replica <= peer
+
+        // Task2: assign a replica as the primary for this file. Hint, see the slide (project 3) on Canvas
 
         // create replicas of the filename
         createReplicaFiles();
@@ -91,32 +95,21 @@ public class FileManager {
         // iterate over the replicas
         for (int i = 0; i < numReplicas; i++) {
             // for each replica, find its successor (peer/node) by performing findSuccessor(replica)
-            NodeInterface successor = chordnode.findSuccessor(replicafiles[i]); // Get the successor for the current replica
+            NodeInterface successor = chordnode.findSuccessor(replicafiles[i]);
 
-            // implement Task1: assign replicas to all active peers such that: pred < replica <= peer
-            NodeInterface pred = chordnode;
+            // call the addKey on the successor and add the replica
+            successor.addKey(replicafiles[i]); // Assuming addKey() method is used to add the replica
 
-            //iterate until we find the predecessor
-            while (!isBetweenRightInclusive(replicafiles[i], pred.getNodeID(), successor.getNodeID())) {
-                pred = pred.getSuccessor();
-                successor = pred.getSuccessor();
-            }
-
-            // implement Task1: assign replicas to all active peers such that: pred < replica <= peer
-            if (pred.getNodeID().compareTo(chordnode.getNodeID()) < 0 && successor.getNodeID().compareTo(replicafiles[i]) >= 0) {
-                // If pred < replica <= successor, assign the replica to successor
-                successor = pred; // Use predecessor as the successor
-            }
-
-            // implement Task2: assign a replica as the primary for this file
-            boolean isPrimary = (i == index); // Assigning primary based on random index
+            // implement a logic to decide if this successor should be assigned as the primary for the file
+            boolean isPrimary = (i == index); // Assign primary based on random index
 
             // call the saveFileContent() on the successor and set isPrimary=true if logic above is true otherwise set isPrimary=false
-            successor.saveFileContent(filename, replicafiles[i], bytesOfFile, isPrimary); // Save the file content on the successor
+            successor.saveFileContent(filename, replicafiles[i], bytesOfFile, isPrimary);
 
             // increment counter
             counter++;
         }
+
 
         return counter;
     }
