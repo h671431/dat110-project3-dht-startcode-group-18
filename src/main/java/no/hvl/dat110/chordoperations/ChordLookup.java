@@ -29,20 +29,7 @@ public class ChordLookup {
 	}
 
 	public NodeInterface findSuccessor(BigInteger key) throws RemoteException {
-		/*// Spør denne noden om å finne etterfølgeren til nøkkelen
-		NodeInterface successor = node.getSuccessor();
 
-		// Sjekk om nøkkelen er medlem av settet {nodeid+1,...,succID} dvs. (nodeid+1 <= key <= succID) ved hjelp av checkInterval
-		if (successor != null && Util.checkInterval(key, node.getNodeID().add(BigInteger.ONE), successor.getNodeID())) {
-			// Hvis logikken returnerer true, returner etterfølgeren
-			return successor;
-		} else {
-			// Hvis logikken returnerer false; kall findHighestPredecessor(key)
-			NodeInterface highestPredecessor = findHighestPredecessor(key);
-
-			// Gjør en rekursiv samtale til highest_pred.findSuccessor(key) - Dette er en rekursiv samtale til logikken returnerer true
-			return highestPredecessor.getSuccessor();
-		}*/
 		NodeInterface succ = node.getSuccessor();
 
 		BigInteger one = BigInteger.ONE;
@@ -72,14 +59,7 @@ public class ChordLookup {
 		for (int i = fingers.size() - 1; i >= 0; i--) {
 			// for each finger, obtain a stub from the registry
 			NodeInterface finger = fingers.get(i);
-			/*if (finger != null) {
-				finger = Util.getProcessStub(finger.getNodeName(), finger.getPort());
-				// check that finger is a member of the set {nodeID+1,...,ID-1} i.e. (nodeID+1
-				if (Util.checkInterval(finger.getNodeID(), node.getNodeID().add(BigInteger.ONE),
-						ID.subtract(BigInteger.ONE))) {
-					return finger;
-				}
-			}*/
+
 			BigInteger one = BigInteger.ONE;
 
 			NodeInterface stub = Util.getProcessStub(finger.getNodeName(), finger.getPort());
