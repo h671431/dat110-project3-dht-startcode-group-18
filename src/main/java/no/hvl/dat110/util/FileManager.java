@@ -25,6 +25,8 @@ import org.apache.logging.log4j.Logger;
 import no.hvl.dat110.middleware.Message;
 import no.hvl.dat110.rpc.interfaces.NodeInterface;
 
+import static no.hvl.dat110.util.Hash.hashOf;
+
 public class FileManager {
 
     private static final Logger logger = LogManager.getLogger(FileManager.class);
@@ -59,7 +61,7 @@ public class FileManager {
 
     public void createReplicaFiles() {
         // set a loop where size = numReplicas
-        for (int i = 0; i < numReplicas; i++) {
+       /* for (int i = 0; i < numReplicas; i++) {
             // replicate by adding the index to filename
             String replicaFilename = filename + i;
             try {
@@ -70,7 +72,16 @@ public class FileManager {
             } catch (RuntimeException e) {
                 logger.error("Error hashing replica: " + e.getMessage());
             }
+        }*/
+        try {
+            for(int i=0; i<numReplicas; i++) {
+                String replica = filename + i;
+                replicafiles[i] = hashOf(replica);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
     }
 
     /**
@@ -93,34 +104,27 @@ public class FileManager {
         createReplicaFiles();
 
         // iterate over the replicas
-        for (int i = 0; i < numReplicas; i++) {
+        for (int i = 0; i < replicafiles.length; i++) {
             // for each replica, find its successor (peer/node) by performing findSuccessor(replica)
             NodeInterface successor = chordnode.findSuccessor(replicafiles[i]);
 
             // call the addKey on the successor and add the replica
             successor.addKey(replicafiles[i]); // Assuming addKey() method is used to add the replica
 
-            // implement a logic to decide if this successor should be assigned as the primary for the file
-            boolean isPrimary = (i == index); // Assign primary based on random index
+            boolean isPrimary = (counter == index);
 
-            // call the saveFileContent() on the successor and set isPrimary=true if logic above is true otherwise set isPrimary=false
-            successor.saveFileContent(filename, replicafiles[i], bytesOfFile, isPrimary);
-
-            // increment counter
+            if (i == index) {
+                successor.saveFileContent(filename, replicafiles[i], bytesOfFile, true);
+            } else {
+                successor.saveFileContent(filename, replicafiles[i], bytesOfFile, false);
+            }
             counter++;
         }
 
 
         return counter;
     }
-    //Måtte lage en ny metode for å kunne finne predecessor
-    private boolean isBetweenRightInclusive(BigInteger key, BigInteger left, BigInteger right) {
-        if (left.compareTo(right) <= 0) {
-            return key.compareTo(left) > 0 && key.compareTo(right) <= 0;
-        } else {
-            return key.compareTo(left) > 0 || key.compareTo(right) <= 0;
-        }
-    }
+
     /**
      * @param filename
      * @return list of active nodes having the replicas of this file
@@ -185,7 +189,7 @@ public class FileManager {
 
         //set the values
         filename = f.getName().replace(".txt", "");
-        hash = Hash.hashOf(filename);
+        hash = hashOf(filename);
         this.bytesOfFile = bytesOfFile;
         double size = (double) bytesOfFile.length / 1000;
         NumberFormat nf = new DecimalFormat();

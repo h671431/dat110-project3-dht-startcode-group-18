@@ -160,27 +160,26 @@ public class ChordProtocols {
 			// Hent finger-tabellen fra chordnode (array av NodeInterface)
 			List<NodeInterface> fingerTable = chordnode.getFingerTable();
 
+			//tømmer fingertabellen
+			fingerTable.clear();
 			// Hent adressens størrelse fra Hash-klassen. Dette er modulus og vårt adresserom (2^mbit = modulus)
-			int mbit = Hash.bitSize();
-			BigInteger modulus = BigInteger.valueOf(2).pow(mbit);
-
+			BigInteger mbit = Hash.addressSize();
 			// get the number of bits from the Hash class. Number of bits = size of the finger table
-			int numBits = Hash.bitSize();
+			int bitSize= Hash.bitSize();
 
 			// Initialize finger table with the correct size
-			for (int i = 0; i < numBits; i++) {
-				fingerTable.add(null); // Add null entries to the finger table
-			}
+
 
 			// iterate over the number of bits
-			for (int i = 0; i < numBits; i++) {
+			for (int i = 0; i < bitSize; i++) {
 				// compute: k = succ(n + 2^(i)) mod 2^mbit
-				BigInteger k = chordnode.getNodeID().add(BigInteger.valueOf(2).pow(i)).mod(modulus);
+				BigInteger n = BigInteger.valueOf(2).pow(i);
+				BigInteger k = chordnode.getNodeID().add(n).mod(mbit);
 				// then: use chordnode to find the successor of k. (i.e., succnode = chordnode.findSuccessor(k))
 				NodeInterface succnode = chordnode.findSuccessor(k);
 				// check that succnode is not null, then add it to the finger table
 				if (succnode != null) {
-					fingerTable.set(i, succnode);
+					fingerTable.add(succnode);
 				}
 			}
 
