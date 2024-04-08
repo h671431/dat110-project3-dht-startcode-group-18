@@ -4,6 +4,7 @@
 package no.hvl.dat110.middleware;
 
 import java.math.BigInteger;
+import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,6 +128,9 @@ public class MutualExclusion {
 				// acknowledge message
 				
 				// send acknowledgement back by calling onMutexAcknowledgementReceived()
+				NodeInterface stub = Util.getProcessStub(procName, port);
+				message.setAcknowledged(true);
+				stub.onMutexAcknowledgementReceived(message);
 				
 				break;
 			}
@@ -135,6 +139,7 @@ public class MutualExclusion {
 			case 1: {
 				
 				// queue this message
+				queue.add(message);
 				break;
 			}
 			
@@ -155,6 +160,16 @@ public class MutualExclusion {
 				// if sender wins, acknowledge the message, obtain a stub and call onMutexAcknowledgementReceived()
 				
 				// if sender looses, queue it
+				int senderClock = message.getClock();
+				int ownClock = node.getMessage().getClock();
+
+				if(senderClock < ownClock || senderClock == ownClock && message.getNodeID().compareTo(node.getNodeID()) <0){
+					message.setAcknowledged(true);
+					NodeInterface stub = Util.getProcessStub(procName, port);
+					stub.onMutexRequestReceived(message);
+				}else{
+					queue.add(message);
+				}
 
 				break;
 			}
@@ -167,6 +182,7 @@ public class MutualExclusion {
 	public void onMutexAcknowledgementReceived(Message message) throws RemoteException {
 		
 		// add message to queueack
+		queueack.add(message);
 		
 	}
 	
@@ -178,19 +194,31 @@ public class MutualExclusion {
 		
 		// obtain a stub for each node from the registry
 		
-		// call releaseLocks()	
+		// call releaseLocks()
+		for(Message message : activenodes){
+			NodeInterface stub = Util.getProcessStub(message.getNodeName(), message.getPort());
+			try{
+				stub.releaseLocks();
+			}catch(RemoteException e){
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	private boolean areAllMessagesReturned(int numvoters) throws RemoteException {
-		logger.info(node.getNodeName()+": size of queueack = "+queueack.size());
-		
+		logger.info(node.getNodeName() + ": size of queueack = " + queueack.size());
+
 		// check if the size of the queueack is the same as the numvoters
-		
+
 		// clear the queueack
-		
+
 		// return true if yes and false if no
-		
-		return false;
+		if (queueack.size() == numvoters) {
+			queueack.clear();
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 	private List<Message> removeDuplicatePeersBeforeVoting() {
