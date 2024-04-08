@@ -258,7 +258,7 @@ public class FileManager {
     }
 
     /**
-     * @param size the size to set
+     * @param sizeOfByte the size to set
      */
     public void setSizeOfByte(String sizeOfByte) {
         this.sizeOfByte = sizeOfByte;
