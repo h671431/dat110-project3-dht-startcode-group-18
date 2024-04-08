@@ -53,33 +53,27 @@ public class MutualExclusion {
 		
 		logger.info(node.nodename + " wants to access CS");
 		// clear the queueack before requesting for votes
-		
+		queueack.clear();
 		// clear the mutexqueue
-		
+		mutexqueue.clear();
 		// increment clock
-		
+		clock.increment();;
 		// adjust the clock on the message, by calling the setClock on the message
-				
+		message.setClock(clock.getClock());
 		// wants to access resource - set the appropriate lock variable
-	
-		
+		WANTS_TO_ENTER_CS = true;
 		// start MutualExclusion algorithm
-		
-			// first, call removeDuplicatePeersBeforeVoting. A peer can hold/contain 2 replicas of a file. This peer will appear twice
 
-			// multicast the message to activenodes (hint: use multicastMessage)
-		
-			// check that all replicas have replied (permission) - areAllMessagesReturned(int numvoters)?
-		
-			// if yes, acquireLock
-		
-				// send the updates to all replicas by calling node.broadcastUpdatetoPeers
-		
-				// clear the mutexqueue
-		
-		// return permission
-		
-		return false;
+		List<Message> peers = removeDuplicatePeersBeforeVoting();
+		multicastMessage(message, peers);
+		boolean permission = areAllMessagesReturned(peers.size());
+		if (permission){
+			acquireLock();
+			node.broadcastUpdatetoPeers(updates);
+			mutexqueue.clear();
+		}
+
+		return permission;
 	}
 	
 	// multicast message to other processes including self
@@ -88,30 +82,33 @@ public class MutualExclusion {
 		logger.info("Number of peers to vote = "+activenodes.size());
 		
 		// iterate over the activenodes
-		
-		// obtain a stub for each node from the registry
-		
-		// call onMutexRequestReceived()
+		for (Message m : activenodes) {
+			NodeInterface stub = Util.getProcessStub(m.getNodeName(), m.getPort());
+			stub.onMutexRequestReceived(message);
+		}
 		
 	}
 	
 	public void onMutexRequestReceived(Message message) throws RemoteException {
 		
 		// increment the local clock
-		
+		clock.increment();
 		// if message is from self, acknowledge, and call onMutexAcknowledgementReceived()
-			
+		if (message.getNodeName().equals(node.getNodeName())) {
+			message.setClock(clock.getClock());
+			onMutexAcknowledgementReceived(message);
+		}
 		int caseid = -1;
 		
 		/* write if statement to transition to the correct caseid in the doDecisionAlgorithm */
-		
-			// caseid=0: Receiver is not accessing shared resource and does not want to (send OK to sender)
-		
-			// caseid=1: Receiver already has access to the resource (dont reply but queue the request)
-		
-			// caseid=2: Receiver wants to access resource but is yet to - compare own message clock to received message's clock
-		
-		// check for decision
+		if(!CS_BUSY && !WANTS_TO_ENTER_CS) {
+			caseid = 0;
+		} else if (CS_BUSY) {
+			caseid = 1;
+		} else if (WANTS_TO_ENTER_CS) {
+				caseid = 2;
+		}
+
 		doDecisionAlgorithm(message, mutexqueue, caseid);
 	}
 	
